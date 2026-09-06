@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+	  <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlXwBTF1vs0YTo0UJZKqFUyw7uHH3CRmsz9C2LUnCpA1TX4TKhVes5kMM&s=10
+
+" />
+    <title>Ajouter un bénéficiaire - UBS</title>
+    <style>
+        body { background-color: #F2F7F9; font-family: 'Open Sans', sans-serif; }
+        .pink-border { border-bottom: 3px solid #E3007E; }
+        .shadow-custom { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        input::placeholder { color: #ccc; font-style: italic; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-gray-700 pb-20 lg:pb-0 overflow-x-hidden">
+
+    <div id="menu-overlay" onclick="toggleMenu()" class="fixed inset-0 bg-black/50 z-50 opacity-0 pointer-events-none transition-opacity duration-300 lg:hidden"></div>
+    
+    <div id="slide-menu" class="fixed top-0 bottom-0 left-0 w-[280px] bg-[#002D54] text-white z-50 -translate-x-full transition-transform duration-300 ease-in-out lg:hidden flex flex-col shadow-2xl">
+        <div class="p-5 bg-[#001E3A] border-b border-white/10 flex items-center gap-3">
+            <div id="menu-initials" class="w-10 h-10 bg-[#E3007E] text-white rounded-full flex items-center justify-center font-bold text-sm uppercase">--</div>
+            <div class="overflow-hidden">
+                <p id="menu-username" class="text-xs font-bold truncate uppercase tracking-wide">Chargement...</p>
+                <p class="text-[10px] text-cyan-400">E-Espace Client actif</p>
+            </div>
+        </div>
+
+        <div class="flex-1 py-4 overflow-y-auto no-scrollbar space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-wallet text-cyan-400 w-5 text-center"></i> Mes Comptes
+            </a>
+            <a href="virement.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-paper-plane text-cyan-400 w-5 text-center"></i> Effectuer un virement
+            </a>
+            <a href="ajouter-beneficiaire.html" class="flex items-center gap-4 px-5 py-3 bg-white/10 text-white font-bold text-sm transition">
+                <i class="fa-solid fa-user-plus text-pink-500 w-5 text-center"></i> Gérer les bénéficiaires
+            </a>
+            <a href="rib.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-file-invoice text-cyan-400 w-5 text-center"></i> Mon RIB / IBAN
+            </a>
+            <a href="carte.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-credit-card text-cyan-400 w-5 text-center"></i> Ma Carte Bancaire
+            </a>
+            <a href="profil.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-user-gear text-cyan-400 w-5 text-center"></i> Mon Profil & Sécurité
+            </a>
+            <hr class="border-white/10 my-4">
+            <a href="#" class="flex items-center gap-4 px-5 py-3 text-xs text-white/60 hover:text-white transition">
+                <i class="fa-solid fa-headset w-5 text-center"></i> Aide & Support technique
+            </a>
+        </div>
+
+        <div class="p-4 border-t border-white/10 bg-[#001E3A]">
+            <button onclick="logout()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-2.5 rounded-lg font-bold transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> SE DÉCONNECTER
+            </button>
+        </div>
+    </div>
+
+    <nav class="hidden lg:flex bg-white border-b px-6 py-2 justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-8">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-7 cursor-pointer" onclick="window.location.href='dashboard.html'">
+            <div class="flex gap-6 text-[13px] font-medium text-gray-600">
+                <a href="dashboard.html" class="text-blue-600 pink-border pb-2">Mes comptes</a>
+                <a>Mes services</a><a>Produits</a><a>Parrainage</a><a>Bourse & Actus</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-gray-400">
+            <i class="fa-solid fa-magnifying-glass bg-gray-100 p-2 rounded-full text-xs"></i>
+            <span class="text-[11px]"><i class="fa-regular fa-comment-dots mr-1"></i> Aide & Contact</span>
+            <div onclick="logout()" id="initials-desktop" class="w-8 h-8 bg-red-100 text-red-500 rounded-md flex items-center justify-center font-bold text-xs cursor-pointer uppercase">--</div>
+        </div>
+    </nav>
+
+    <div class="lg:hidden bg-[#002D54] text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <div onclick="toggleMenu()" class="w-9 h-9 bg-white/10 text-white rounded-full flex items-center justify-center cursor-pointer active:scale-95 transition">
+                <i class="fa-solid fa-bars text-sm"></i>
+            </div>
+            <div>
+                <p class="text-[10px] opacity-60">Mon E-Espace</p>
+                <p class="text-xs font-bold -mt-0.5 uppercase tracking-wide">Bénéficiaires</p>
+            </div>
+        </div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-5 brightness-0 invert">
+        <div id="initials-mobile" class="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center font-bold text-xs border border-white/20 uppercase">--</div>
+    </div>
+
+    <div class="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6">
+        
+        <div class="col-span-1 lg:col-span-3 order-2 lg:order-1 space-y-4">
+            <div class="bg-white p-5 rounded-2xl lg:rounded-xl shadow-custom text-center border lg:border-0">
+                <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Total de mes avoirs</p>
+                <span id="total-avoirs" class="text-2xl font-bold text-green-500">0,00 €</span>
+            </div>
+            <div class="bg-white rounded-2xl lg:rounded-xl shadow-custom overflow-hidden border lg:border-0">
+                <div class="bg-[#00AEEF] text-white p-3.5 text-[11px] font-bold uppercase tracking-wider">Mes comptes bancaires</div>
+                <div class="p-4 bg-gray-50/50">
+                    <div class="flex justify-between text-[11px] font-bold text-blue-900 uppercase">
+                        <span>Compte Courant</span> <span class="text-green-500 side-solde">0,00 €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-1 lg:col-span-7 order-1 lg:order-2 space-y-4">
+            
+            <div class="bg-white p-6 lg:p-8 rounded-2xl lg:rounded-xl shadow-custom border lg:border-0">
+                <h2 class="text-xs lg:text-sm font-bold text-blue-900 uppercase border-b pb-4 mb-6 tracking-wider">Ajouter un nouveau bénéficiaire</h2>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-1">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Nom</label>
+                        <input type="text" id="ben-nom" placeholder="Ex: DUPONT" class="w-full border p-3 lg:p-2 rounded-xl lg:rounded bg-gray-50/70 outline-none uppercase mt-1 text-xs focus:border-cyan-500 transition">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Prénom</label>
+                        <input type="text" id="ben-prenom" placeholder="Ex: Jean" class="w-full border p-3 lg:p-2 rounded-xl lg:rounded bg-gray-50/70 outline-none mt-1 text-xs focus:border-cyan-500 transition">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">IBAN</label>
+                        <input type="text" id="ben-iban" placeholder="FR76 0000 0000 0000 0000 0000 000" class="w-full border p-3 lg:p-2 rounded-xl lg:rounded bg-gray-50/70 font-mono outline-none uppercase mt-1 text-xs focus:border-cyan-500 transition">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Code BIC (SWIFT)</label>
+                        <input type="text" id="ben-bic" placeholder="Ex: BPPFRPP" class="w-full border p-3 lg:p-2 rounded-xl lg:rounded bg-gray-50/70 outline-none uppercase mt-1 text-xs focus:border-cyan-500 transition">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Banque</label>
+                        <input type="text" id="ben-banque" placeholder="Ex: BNP Paribas" class="w-full border p-3 lg:p-2 rounded-xl lg:rounded bg-gray-50/70 outline-none mt-1 text-xs focus:border-cyan-500 transition">
+                    </div>
+                </div>
+
+                <button onclick="validerAjout()" class="w-full bg-[#00AEEF] text-white py-3.5 rounded-xl lg:rounded font-bold text-xs uppercase shadow-md mt-6 hover:bg-cyan-600 transition tracking-wider">
+                    Enregistrer le bénéficiaire
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl lg:rounded-xl shadow-custom overflow-hidden border lg:border-0">
+                <div class="p-4 bg-gray-50/60 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b">Mes bénéficiaires enregistrés</div>
+                <div id="liste-beneficiaires" class="divide-y divide-gray-100">
+                    </div>
+            </div>
+        </div>
+
+        <div class="col-span-1 lg:col-span-2 order-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 pt-2">
+            <div onclick="window.location.href='virement.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm group-hover:bg-[#00AEEF] group-hover:text-white transition"><i class="fa-solid fa-right-left"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Virements</span>
+            </div>
+            <div onclick="window.location.href='historique.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm group-hover:bg-[#00AEEF] group-hover:text-white transition"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Historique</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-16 grid grid-cols-4 items-center justify-center z-50 shadow-lg">
+        <a href="dashboard.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-wallet text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Comptes</span>
+        </a>
+        <a href="virement.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-paper-plane text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Virements</span>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center text-blue-600">
+            <i class="fa-solid fa-user-plus text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Bénéficiaires</span>
+        </a>
+        <a href="profil.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-user text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Profil</span>
+        </a>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let userConnected = null;
+
+        // Fonction Toggle pour le menu Android
+        function toggleMenu() {
+            const menu = document.getElementById('slide-menu');
+            const overlay = document.getElementById('menu-overlay');
+            
+            if(menu.classList.contains('-translate-x-full')) {
+                menu.classList.remove('-translate-x-full');
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                menu.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        window.onload = async () => {
+            userConnected = await checkAuth();
+            if(!userConnected) return;
+
+            // Mise à jour de l'interface
+            document.getElementById('total-avoirs').innerText = formatCurrency(userConnected.solde);
+            document.querySelectorAll('.side-solde').forEach(el => el.innerText = formatCurrency(userConnected.solde));
+            
+            if(document.getElementById('initials-desktop')) document.getElementById('initials-desktop').innerText = getInitials(userConnected.name);
+            if(document.getElementById('initials-mobile')) document.getElementById('initials-mobile').innerText = getInitials(userConnected.name);
+            
+            // Remplissage Slide Menu
+            if(document.getElementById('menu-initials')) document.getElementById('menu-initials').innerText = getInitials(userConnected.name);
+            if(document.getElementById('menu-username')) document.getElementById('menu-username').innerText = userConnected.name;
+            
+            afficherListe();
+        };
+
+        function afficherListe() {
+            const container = document.getElementById('liste-beneficiaires');
+            const bens = userConnected.beneficiaries || [];
+            
+            if(bens.length === 0) {
+                container.innerHTML = '<p class="p-8 text-center text-xs text-gray-400 italic">Aucun bénéficiaire enregistré pour le moment.</p>';
+                return;
+            }
+
+            container.innerHTML = bens.map(b => `
+                <div class="p-4 flex justify-between items-center hover:bg-gray-50/50 transition text-xs">
+                    <div class="space-y-0.5">
+                        <p class="font-bold text-blue-950 uppercase tracking-wide">${b.nom} ${b.prenom}</p>
+                        <p class="text-gray-400 font-mono text-[11px]">${b.iban}</p>
+                    </div>
+                    <div class="text-right text-[10px] text-gray-400 uppercase font-medium">
+                        <p class="text-blue-900/80 font-bold">${b.banque || '-'}</p>
+                        <p class="tracking-wider mt-0.5">${b.bic || '-'}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function validerAjout() {
+            const nom = document.getElementById('ben-nom').value.trim();
+            const prenom = document.getElementById('ben-prenom').value.trim();
+            const iban = document.getElementById('ben-iban').value.trim();
+            const bic = document.getElementById('ben-bic').value.trim();
+            const banque = document.getElementById('ben-banque').value.trim();
+
+            if(!nom || !prenom || !iban) {
+                alert("Veuillez remplir au moins le Nom, le Prénom et l'IBAN.");
+                return;
+            }
+
+            try {
+                const liste = userConnected.beneficiaries || [];
+                liste.push({
+                    nom: nom.toUpperCase(),
+                    prenom: prenom,
+                    iban: iban.toUpperCase(),
+                    bic: bic.toUpperCase(),
+                    banque: banque
+                });
+
+                await db.collection("users").doc(userConnected.clientCode).update({
+                    beneficiaries: liste
+                });
+
+                alert("Bénéficiaire ajouté avec succès !");
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                alert("Erreur lors de l'enregistrement.");
+            }
+        }
+    </script>
+</body>
+</html>

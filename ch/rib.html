@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Mon RIB - UBS</title>
+	  <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlXwBTF1vs0YTo0UJZKqFUyw7uHH3CRmsz9C2LUnCpA1TX4TKhVes5kMM&s=10
+
+" />
+    <style>
+        body { background-color: #F2F7F9; font-family: 'Open Sans', sans-serif; }
+        .pink-border { border-bottom: 3px solid #E3007E; }
+        .shadow-custom { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .btn-download { background-color: #002D54; color: white; transition: 0.3s; }
+        .btn-copy { background-color: #FF6600; color: white; transition: 0.3s; }
+    </style>
+</head>
+<body class="text-gray-700 pb-20 lg:pb-0">
+
+    <!-- NAV ORDINATEUR (Masquée sur Mobile) -->
+    <nav class="hidden lg:flex bg-white border-b px-6 py-2 justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-8">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-7 cursor-pointer" onclick="window.location.href='dashboard.html'">
+            <div class="flex gap-6 text-[13px] font-medium text-gray-600">
+                <a href="dashboard.html" class="text-blue-600 pink-border pb-2">Mes comptes</a>
+                <a>Mes services</a><a>Produits</a><a>Parrainage</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-gray-400">
+            <i class="fa-solid fa-magnifying-glass bg-gray-100 p-2 rounded-full text-xs"></i>
+            <div onclick="logout()" id="initials-desktop" class="w-8 h-8 bg-red-100 text-red-500 rounded-md flex items-center justify-center font-bold text-xs cursor-pointer uppercase">--</div>
+        </div>
+    </nav>
+
+    <!-- BANDEAU BANCAIRE STYLE APP ANDROID (Masqué sur Ordinateur) -->
+    <div class="lg:hidden bg-[#002D54] text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <div onclick="window.location.href='dashboard.html'" class="w-9 h-9 bg-white/10 text-white rounded-full flex items-center justify-center cursor-pointer">
+                <i class="fa-solid fa-arrow-left text-sm"></i>
+            </div>
+            <div>
+                <p class="text-[10px] opacity-60">Mon E-Espace</p>
+                <p class="text-xs font-bold -mt-0.5 uppercase tracking-wide">Mon RIB</p>
+            </div>
+        </div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-5 brightness-0 invert">
+        <div id="initials-mobile" class="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center font-bold text-xs border border-white/20 uppercase">--</div>
+    </div>
+
+    <!-- CONTENEUR PRINCIPAL -->
+    <div class="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6">
+        
+        <!-- BLOC GAUCHE : SYNTHESE -->
+        <div class="col-span-1 lg:col-span-3 order-2 lg:order-1 space-y-4">
+            <div class="bg-white p-5 rounded-2xl lg:rounded-xl shadow-custom text-center border lg:border-0">
+                <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Total de mes avoirs</p>
+                <span id="total-avoirs" class="text-2xl font-bold text-green-500">0,00 €</span>
+            </div>
+            <div class="bg-white rounded-2xl lg:rounded-xl shadow-custom overflow-hidden border lg:border-0">
+                <div class="bg-[#00AEEF] text-white p-3.5 text-[11px] font-bold uppercase tracking-wider">Mes comptes bancaires</div>
+                <div class="p-4 bg-gray-50/50">
+                    <div class="flex justify-between text-[11px] font-bold text-blue-900 uppercase">
+                        <span>Compte Courant</span> <span class="side-solde text-green-500">0,00 €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZONE CENTRALE : IDENTITE BANCAIRE -->
+        <div class="col-span-1 lg:col-span-7 order-1 lg:order-2 space-y-4">
+            <div class="bg-white p-6 lg:p-8 rounded-2xl lg:rounded-xl shadow-custom border lg:border-0">
+                <h1 class="text-sm lg:text-xl font-bold text-blue-900 mb-1 uppercase tracking-wide hidden lg:block">Relevé d'Identité Bancaire (RIB)</h1>
+                <p class="text-xs text-gray-400 mb-6 hidden lg:block">Vous pouvez télécharger et transmettre ce document pour recevoir des virements.</p>
+
+                <!-- Section Titulaire & Domiciliation -->
+                <div class="mb-6">
+                    <h2 class="text-[11px] font-bold text-blue-900 border-b-2 border-orange-500 pb-1 mb-3 uppercase tracking-wider">Détails de votre compte</h2>
+                    <div class="space-y-1 text-xs divide-y divide-gray-50">
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-gray-500">Titulaire du Compte</span>
+                            <span id="rib-titulaire" class="uppercase font-medium text-gray-900">--</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-gray-500">Nom de la Banque</span>
+                            <span class="font-medium text-gray-900">UBS Switzerland AG</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2 gap-4">
+                            <span class="font-bold text-gray-500 shrink-0">Domiciliation</span>
+                            <span class="text-right text-gray-900">Bahnhofstrasse 72, 8001 Zürich, Suisse</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section SEPA / Internationaux -->
+                <div class="mb-8">
+                    <h2 class="text-[11px] font-bold text-blue-900 border-b-2 border-orange-500 pb-1 mb-3 uppercase tracking-wider">Identifiants de Transfert (SEPA)</h2>
+                    <div class="space-y-1 text-xs divide-y divide-gray-50">
+                        <div class="flex justify-between items-center py-3 lg:py-2 gap-4">
+                            <span class="font-bold text-gray-500 uppercase">IBAN</span>
+                            <span class="text-orange-600 font-mono font-bold tracking-wide text-right break-all selection:bg-orange-100 text-[11px] lg:text-xs" id="rib-iban">FR76 ---- ---- ---- ---- ---- ---</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-gray-500 uppercase">BIC / SWIFT</span>
+                            <span class="font-bold text-gray-900 tracking-wider">UBSWCHZH80A</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-gray-500">Code Client</span>
+                            <span id="rib-client" class="font-medium text-gray-900">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action adaptés au format Mobile/Web -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button class="w-full sm:w-auto btn-download px-5 py-3.5 sm:py-2.5 rounded-xl sm:rounded font-bold text-xs flex items-center justify-center gap-2 uppercase tracking-wide shadow-sm">
+                        <i class="fa-solid fa-file-pdf text-sm"></i> Télécharger (PDF)
+                    </button>
+                    <button onclick="copierIban()" class="w-full sm:w-auto btn-copy px-5 py-3.5 sm:py-2.5 rounded-xl sm:rounded font-bold text-xs flex items-center justify-center gap-2 uppercase tracking-wide shadow-sm">
+                        <i class="fa-solid fa-copy text-sm"></i> Copier l'IBAN
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLOC DROITE : ACTIONS RAPIDES -->
+        <div class="col-span-1 lg:col-span-2 order-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 pt-2">
+            <div onclick="window.location.href='carte.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-credit-card"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Ma carte</span>
+            </div>
+            <div onclick="window.location.href='profil.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-user"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Profil</span>
+            </div>
+            <div onclick="window.location.href='historique.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Historique</span>
+            </div>
+            <div onclick="window.location.href='virement.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-right-left"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Virements</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRE DE NAVIGATION BASSE FORMAT ANDROID NATIVE -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-16 grid grid-cols-4 items-center justify-center z-50 shadow-lg">
+        <a href="dashboard.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-wallet text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Comptes</span>
+        </a>
+        <a href="virement.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-paper-plane text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Virements</span>
+        </a>
+        <a href="beneficiaire.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-user-plus text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Bénéficiaires</span>
+        </a>
+        <a href="profil.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-user text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Profil</span>
+        </a>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        window.onload = async () => {
+            const user = await checkAuth();
+            if(!user) return;
+            
+            // UI Haut & Gauche (Découplé Desktop / Mobile)
+            document.getElementById('total-avoirs').innerText = formatCurrency(user.solde);
+            document.querySelectorAll('.side-solde').forEach(el => el.innerText = formatCurrency(user.solde));
+            
+            if(document.getElementById('initials-desktop')) document.getElementById('initials-desktop').innerText = getInitials(user.name);
+            if(document.getElementById('initials-mobile')) document.getElementById('initials-mobile').innerText = getInitials(user.name);
+
+            // Remplissage RIB
+            document.getElementById('rib-titulaire').innerText = user.name;
+            document.getElementById('rib-iban').innerText = user.iban || "CH93 00762 006099017673 4";
+            document.getElementById('rib-client').innerText = user.clientCode || "5294620168";
+        };
+
+        function copierIban() {
+            const iban = document.getElementById('rib-iban').innerText;
+            navigator.clipboard.writeText(iban).then(() => {
+                alert("IBAN copié dans le presse-papier !");
+            });
+        }
+    </script>
+</body>
+</html>

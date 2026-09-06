@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+	  <link rel="shortcut icon" href="https://static.vecteezy.com/system/resources/previews/069/864/350/non_2x/ubs-bank-logo-glossy-rounded-square-icon-free-png.png
+
+" />
+    <title>Connexion - UBS </title>
+    <style>
+        body { background-color: #F2F7F9; font-family: 'Open Sans', sans-serif; }
+        .login-card { box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .btn-pink { background-color: #E3007E; transition: all 0.3s; }
+        .btn-pink:hover { background-color: #c2006d; }
+        input:focus { border-color: #E3007E !important; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <nav class="bg-white p-4 shadow-sm flex justify-center">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-12">
+    </nav>
+
+    <main class="flex-grow flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md rounded-lg p-8 login-card">
+            <h1 class="text-2xl font-bold text-[#004482] mb-2">Accès client</h1>
+            <p class="text-sm text-gray-500 mb-8">Saisissez vos identifiants pour accéder à votre espace.</p>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Identifiant (8 chiffres)</label>
+                    <input type="text" id="clientCode" maxlength="8" placeholder="Ex: ●●●●●●●●" 
+                        class="w-full border-b-2 border-gray-200 py-2 outline-none text-lg tracking-widest transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Code secret (6 chiffres)</label>
+                    <input type="password" id="pin" maxlength="6" placeholder="●●●●●●" 
+                        class="w-full border-b-2 border-gray-200 py-2 outline-none text-lg tracking-widest transition-colors">
+                </div>
+
+                <div id="error-msg" class="text-red-500 text-xs font-bold hidden text-center bg-red-50 p-2 rounded">
+                    Identifiant ou code secret incorrect.
+                </div>
+
+                <button onclick="handleLogin()" id="login-btn" class="w-full btn-pink text-white py-4 rounded font-bold shadow-lg uppercase tracking-wide">
+                    Me connecter
+                </button>
+            </div>
+
+            <div class="mt-8 pt-6 border-t text-center space-y-4">
+                <p class="text-xs text-blue-600 font-bold cursor-pointer hover:underline">Identifiant ou code secret oublié ?</p>
+                <p class="text-xs text-gray-400">Pas encore client ? <span class="text-pink-600 font-bold cursor-pointer">Ouvrir un compte</span></p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-6 text-center text-[10px] text-gray-400 leading-relaxed">
+        UBS SUISSE <br>
+UBS Group AG<br>
+
+Bahnhofstrasse 45
+Postfach
+8098 Zürich
+Schweiz
+
+    </footer>
+
+    <script src="shared.js"></script>
+    <script>
+        async function handleLogin() {
+            const codeInput = document.getElementById('clientCode').value.trim();
+            const pinInput = document.getElementById('pin').value.trim();
+            const btn = document.getElementById('login-btn');
+            const error = document.getElementById('error-msg');
+
+            // Validation basique
+            if (codeInput.length < 1 || pinInput.length < 1) {
+                error.innerText = "Veuillez remplir tous les champs.";
+                error.classList.remove('hidden');
+                return;
+            }
+
+            // État de chargement
+            btn.innerText = "VÉRIFICATION...";
+            btn.disabled = true;
+            error.classList.add('hidden');
+
+            try {
+                // Recherche directe dans Firestore via shared.js (db est défini dans shared.js)
+                const doc = await db.collection("users").doc(codeInput).get();
+
+                if (doc.exists) {
+                    const userData = doc.data();
+                    
+                    // Vérification du code secret (PIN)
+                    if (userData.pin === pinInput) {
+                        // CRUCIAL : On enregistre le code client exact pour shared.js
+                        localStorage.setItem('currentClientCode', codeInput);
+                        
+                        // Redirection
+                        if (userData.isAdmin) {
+                            window.location.href = "admin.html";
+                        } else {
+                            window.location.href = "dashboard.html";
+                        }
+                    } else {
+                        showErrorMessage("Code secret incorrect.");
+                    }
+                } else {
+                    showErrorMessage("Identifiant inconnu.");
+                }
+            } catch (err) {
+                console.error("Erreur Login:", err);
+                showErrorMessage("Erreur de connexion au serveur.");
+            }
+        }
+
+        function showErrorMessage(message) {
+            const error = document.getElementById('error-msg');
+            const btn = document.getElementById('login-btn');
+            error.innerText = message;
+            error.classList.remove('hidden');
+            btn.innerText = "ME CONNECTER";
+            btn.disabled = false;
+        }
+
+        // Gestion de la touche Entrée pour valider
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+    </script>
+</body>
+</html>

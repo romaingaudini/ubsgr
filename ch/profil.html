@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Mon Profil - UBS</title>
+	  <link rel="shortcut icon" href="https://static.vecteezy.com/system/resources/previews/069/864/350/non_2x/ubs-bank-logo-glossy-rounded-square-icon-free-png.png
+
+" />
+    <style>
+        body { background-color: #F2F7F9; font-family: 'Open Sans', sans-serif; }
+        .pink-border { border-bottom: 3px solid #E3007E; }
+        .shadow-custom { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .btn-orange { background-color: #FF6600; color: white; transition: 0.3s; }
+        .section-title { color: #FF6600; font-weight: bold; font-size: 13px; border-bottom: 2px solid #FF6600; display: inline-block; margin-bottom: 12px; padding-bottom: 2px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-gray-700 pb-20 lg:pb-0 overflow-x-hidden">
+
+    <div id="menu-overlay" onclick="toggleMenu()" class="fixed inset-0 bg-black/50 z-50 opacity-0 pointer-events-none transition-opacity duration-300 lg:hidden"></div>
+    
+    <div id="slide-menu" class="fixed top-0 bottom-0 left-0 w-[280px] bg-[#002D54] text-white z-50 -translate-x-full transition-transform duration-300 ease-in-out lg:hidden flex flex-col shadow-2xl">
+        <div class="p-5 bg-[#001E3A] border-b border-white/10 flex items-center gap-3">
+            <div id="menu-initials" class="w-10 h-10 bg-[#E3007E] text-white rounded-full flex items-center justify-center font-bold text-sm uppercase">--</div>
+            <div class="overflow-hidden">
+                <p id="menu-username" class="text-xs font-bold truncate uppercase tracking-wide">Chargement...</p>
+                <p class="text-[10px] text-cyan-400">E-Espace Client actif</p>
+            </div>
+        </div>
+
+        <div class="flex-1 py-4 overflow-y-auto no-scrollbar space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-wallet text-cyan-400 w-5 text-center"></i> Mes Comptes
+            </a>
+            <a href="virement.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-paper-plane text-cyan-400 w-5 text-center"></i> Effectuer un virement
+            </a>
+            <a href="ajouter-beneficiaire.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-user-plus text-cyan-400 w-5 text-center"></i> Gérer les bénéficiaires
+            </a>
+            <a href="rib.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-file-invoice text-cyan-400 w-5 text-center"></i> Mon RIB / IBAN
+            </a>
+            <a href="carte.html" class="flex items-center gap-4 px-5 py-3 hover:bg-white/5 text-sm transition">
+                <i class="fa-solid fa-credit-card text-cyan-400 w-5 text-center"></i> Ma Carte Bancaire
+            </a>
+            <a href="profil.html" class="flex items-center gap-4 px-5 py-3 bg-white/10 text-white font-bold text-sm transition">
+                <i class="fa-solid fa-user-gear text-pink-500 w-5 text-center"></i> Mon Profil & Sécurité
+            </a>
+            <hr class="border-white/10 my-4">
+            <a href="#" class="flex items-center gap-4 px-5 py-3 text-xs text-white/60 hover:text-white transition">
+                <i class="fa-solid fa-headset w-5 text-center"></i> Aide & Support technique
+            </a>
+        </div>
+
+        <div class="p-4 border-t border-white/10 bg-[#001E3A]">
+            <button onclick="logout()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-2.5 rounded-lg font-bold transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> SE DÉCONNECTER
+            </button>
+        </div>
+    </div>
+
+    <nav class="hidden lg:flex bg-white border-b px-6 py-2 justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-8">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png?utm_source=fr.wikipedia.org&utm_campaign=index&utm_content=original" class="h-7 cursor-pointer" onclick="window.location.href='dashboard.html'">
+            <div class="flex gap-6 text-[13px] font-medium text-gray-600">
+                <a href="dashboard.html" class="text-blue-600 pink-border pb-2">Mes comptes</a>
+                <a>Mes services</a><a>Produits</a><a>Parrainage</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-gray-400">
+            <i class="fa-solid fa-magnifying-glass bg-gray-100 p-2 rounded-full text-xs"></i>
+            <div onclick="logout()" id="initials-desktop" class="w-8 h-8 bg-red-100 text-red-500 rounded-md flex items-center justify-center font-bold text-xs cursor-pointer uppercase">--</div>
+        </div>
+    </nav>
+
+    <div class="lg:hidden bg-[#002D54] text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <div onclick="toggleMenu()" class="w-9 h-9 bg-white/10 text-white rounded-full flex items-center justify-center cursor-pointer active:scale-95 transition">
+                <i class="fa-solid fa-bars text-sm"></i>
+            </div>
+            <div>
+                <p class="text-[10px] opacity-60">Mon E-Espace</p>
+                <p class="text-xs font-bold -mt-0.5 uppercase tracking-wide">Mon Profil</p>
+            </div>
+        </div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png?utm_source=fr.wikipedia.org&utm_campaign=index&utm_content=original" class="h-5 brightness-0 invert">
+        <div id="initials-mobile" class="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center font-bold text-xs border border-white/20 uppercase">--</div>
+    </div>
+
+    <div class="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6">
+        
+        <div class="col-span-1 lg:col-span-3 order-2 lg:order-1 space-y-4">
+            <div class="bg-white p-5 rounded-2xl lg:rounded-xl shadow-custom text-center border lg:border-0">
+                <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Total de mes avoirs</p>
+                <span id="total-avoirs" class="text-2xl font-bold text-green-500">0,00 €</span>
+            </div>
+            <div class="bg-white rounded-2xl lg:rounded-xl shadow-custom overflow-hidden border lg:border-0">
+                <div class="bg-[#00AEEF] text-white p-3.5 text-[11px] font-bold uppercase tracking-wider">Mes comptes bancaires</div>
+                <div class="p-4 bg-gray-50/50">
+                    <div class="flex justify-between text-[11px] font-bold text-blue-900 uppercase">
+                        <span>Compte Courant</span> <span class="side-solde text-green-500">0,00 €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-1 lg:col-span-7 order-1 lg:order-2 space-y-4">
+            <div class="bg-white p-6 lg:p-8 rounded-2xl lg:rounded-xl shadow-custom border lg:border-0">
+                <h1 class="text-sm lg:text-lg font-bold text-blue-900 mb-6 uppercase tracking-wide border-b pb-3 hidden lg:block">Mon Profil et Mes Informations (e-Relevé)</h1>
+                
+                <div class="mb-8">
+                    <h2 class="section-title tracking-wider uppercase text-[11px]">Informations Personnelles</h2>
+                    <div class="space-y-1 text-xs divide-y divide-gray-50">
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-blue-900">Nom et Prénom</span>
+                            <span id="prof-nom" class="uppercase font-medium text-gray-900">--</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2 gap-4">
+                            <span class="font-bold text-blue-900 shrink-0">Adresse</span>
+                            <span id="prof-adresse" class="text-right text-gray-900">Löwenstrasse 32, 8001 Zürich, Suisse  </span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-blue-900">Téléphone</span>
+                            <span id="prof-tel" class="text-gray-900">+41767169688</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-blue-900">Email</span>
+                            <span id="prof-email" class="lowercase text-gray-900">parmentier.michel10@gmail.com</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h2 class="section-title tracking-wider uppercase text-[11px]">Informations Bancaires</h2>
+                    <div class="space-y-1 text-xs divide-y divide-gray-50">
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-blue-900">Code Client</span>
+                            <span id="prof-code" class="font-medium text-gray-900">--</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2 gap-4">
+                            <span class="font-bold text-blue-900 shrink-0">IBAN Principal</span>
+                            <span id="c-iban" class="font-mono text-gray-900 tracking-wide text-[11px]">CH93 00762 006099017673 4</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-blue-900">Nom de la Banque</span>
+                            <span class="font-medium text-gray-900">UBS SUISSE</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 lg:py-2">
+                            <span class="font-bold text-blue-900">Nom Conseiller</span>
+                            <span class="font-bold text-gray-900">MARLENE CANDELOT</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="w-full lg:w-auto btn-orange px-5 py-3.5 lg:py-2 rounded-xl lg:rounded text-xs font-bold uppercase shadow-sm tracking-wide">
+                    Modifier mes informations
+                </button>
+            </div>
+        </div>
+
+        <div class="col-span-1 lg:col-span-2 order-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 pt-2">
+            <div onclick="window.location.href='rib.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-file-invoice"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Mon RIB</span>
+            </div>
+            <div onclick="window.location.href='virement.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-right-left"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Virements</span>
+            </div>
+            <div onclick="window.location.href='historique.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Historique</span>
+            </div>
+            <div onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-custom border border-gray-50 cursor-pointer hover:bg-gray-50 transition group">
+                <div class="w-9 h-9 bg-[#00AEEF]/10 text-[#00AEEF] rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-house"></i></div>
+                <span class="text-[10px] font-bold text-blue-900 uppercase">Accueil</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-16 grid grid-cols-4 items-center justify-center z-50 shadow-lg">
+        <a href="dashboard.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-wallet text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Comptes</span>
+        </a>
+        <a href="virement.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-paper-plane text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Virements</span>
+        </a>
+        <a href="ajouter-beneficiaire.html" class="flex flex-col items-center justify-center text-gray-400">
+            <i class="fa-solid fa-user-plus text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Bénéficiaires</span>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center text-blue-600">
+            <i class="fa-solid fa-user text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Profil</span>
+        </a>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        // Fonction Toggle pour Ouvrir/Fermer le menu
+        // Ajuste dynamiquement l'overlay et la translation CSS
+        function toggleMenu() {
+            const menu = document.getElementById('slide-menu');
+            const overlay = document.getElementById('menu-overlay');
+            
+            if(menu.classList.contains('-translate-x-full')) {
+                menu.classList.remove('-translate-x-full');
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                menu.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        window.onload = async () => {
+            const user = await checkAuth();
+            if(!user) return;
+            
+            // UI Haut & Gauche (Découplé Desktop / Mobile)
+            document.getElementById('total-avoirs').innerText = formatCurrency(user.solde);
+            document.querySelectorAll('.side-solde').forEach(el => el.innerText = formatCurrency(user.solde));
+            
+            if(document.getElementById('initials-desktop')) document.getElementById('initials-desktop').innerText = getInitials(user.name);
+            if(document.getElementById('initials-mobile')) document.getElementById('initials-mobile').innerText = getInitials(user.name);
+
+            // Remplissage Slide Menu
+            if(document.getElementById('menu-initials')) document.getElementById('menu-initials').innerText = getInitials(user.name);
+            if(document.getElementById('menu-username')) document.getElementById('menu-username').innerText = user.name;
+
+            // Remplissage Profil
+            document.getElementById('prof-nom').innerText = user.name;
+            document.getElementById('prof-email').innerText = user.email || "non spécifié";
+            document.getElementById('prof-code').innerText = user.clientCode || "5294620168";
+            document.getElementById('prof-iban').innerText = user.iban || "Non spécifié";
+            if(user.address) document.getElementById('prof-adresse').innerText = user.address;
+            if(user.phone) document.getElementById('prof-tel').innerText = user.phone;
+        };
+    </script>
+</body>
+</html>

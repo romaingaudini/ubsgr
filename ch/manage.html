@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Administration Master - Boursorama</title>
+    <style>
+        body { background-color: #F2F7F9; font-family: 'Open Sans', sans-serif; }
+        .shadow-custom { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        input, select { border: 1px solid #e2e8f0; padding: 8px; border-radius: 4px; font-size: 12px; outline: none; width: 100%; background: white; }
+        input:focus { border-color: #002D54; }
+        label { font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 3px; }
+        .section-title { font-size: 11px; font-weight: 800; border-bottom: 2px solid; padding-bottom: 4px; margin-bottom: 15px; text-transform: uppercase; }
+    </style>
+</head>
+<body class="text-gray-700">
+
+    <nav class="bg-white border-b px-6 py-2 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <span class="text-red-600 font-bold italic uppercase tracking-wider">Console d'Administration Boursorama</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="window.location.href='dashboard.html'" class="text-[10px] font-bold text-gray-500 border px-3 py-1 rounded hover:bg-gray-50">RETOUR SITE</button>
+            <div class="w-8 h-8 bg-gray-800 text-white rounded flex items-center justify-center font-bold text-xs">AD</div>
+        </div>
+    </nav>
+
+    <div class="max-w-[1500px] mx-auto grid grid-cols-12 gap-6 p-6">
+        <div class="col-span-4 space-y-4">
+            <div class="bg-white rounded shadow-custom overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-blue-900 uppercase">Clients en base</h3>
+                    <button onclick="loadClients()" class="text-blue-500 hover:rotate-180 transition-all duration-500"><i class="fa-solid fa-sync"></i></button>
+                </div>
+                <div class="max-h-[800px] overflow-y-auto" id="client-list">
+                    </div>
+            </div>
+        </div>
+
+        <div class="col-span-8 space-y-6">
+            <div class="bg-white p-8 rounded shadow-custom">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 id="form-title" class="text-sm font-bold text-blue-900 uppercase">Créer un nouveau profil client</h2>
+                    <button onclick="resetForm()" class="bg-gray-100 text-[10px] px-3 py-1 rounded font-bold hover:bg-gray-200">NOUVEAU COMPTE</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-8">
+                    <div class="space-y-4">
+                        <p class="section-title text-pink-600 border-pink-100">Accès & Identité</p>
+                        <div>
+                            <label>Code Client (8 chiffres)</label>
+                            <input type="text" id="c-code" maxlength="8" placeholder="Ex: 12345678">
+                        </div>
+                        <div>
+                            <label>Code PIN (6 chiffres)</label>
+                            <input type="password" id="c-pin" maxlength="6" placeholder="Ex: 000000">
+                        </div>
+                        <div><label>Nom et Prénom</label><input type="text" id="c-name" class="uppercase"></div>
+                        <div><label>Email</label><input type="email" id="c-email"></div>
+                        <div>
+                            <label>Statut du compte</label>
+                            <select id="c-status">
+                                <option value="Actif">ACTIF</option>
+                                <option value="Bloqué">BLOQUÉ</option>
+                                <option value="Vérification">EN VÉRIFICATION</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <p class="section-title text-blue-500 border-blue-100">Infos Bancaires</p>
+                        <div><label>IBAN</label><input type="text" id="c-iban" class="font-mono uppercase"></div>
+                        <div><label>Solde Actuel (€)</label><input type="number" id="c-solde" value="0"></div>
+                        <div><label>Nom du Conseiller</label><input type="text" id="c-cons" value="ROMAIN MATHOUX"></div>
+                        <div><label>Adresse Domicile</label><input type="text" id="c-addr"></div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <p class="section-title text-orange-500 border-orange-100">Carte Bancaire</p>
+                        <div><label>Nom sur la carte</label><input type="text" id="c-cardname" class="uppercase"></div>
+                        <div><label>Numéro de carte</label><input type="text" id="c-16" placeholder="4500 ...."></div>
+                        <div><label>Expiration (MM/AA)</label><input type="text" id="c-exp" placeholder="08/27"></div>
+                    </div>
+                </div>
+
+                <div id="op-section" class="mt-10 p-6 bg-blue-50 rounded-lg border border-blue-100 hidden">
+                    <h3 class="text-[11px] font-bold text-blue-900 uppercase mb-4"><i class="fa-solid fa-calendar-plus mr-2"></i>Ajouter une opération manuelle</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div><label>Date</label><input type="date" id="h-date"></div>
+                        <div>
+                            <label>Type</label>
+                            <select id="h-type">
+                                <option value="VIREMENT RECU">Virement reçu (+)</option>
+                                <option value="DEPOT">Dépôt (+)</option>
+                                <option value="RETRAIT">Retrait (-)</option>
+                                <option value="ACHAT CB">Achat CB (-)</option>
+                            </select>
+                        </div>
+                        <div class="col-span-1"><label>Libellé</label><input type="text" id="h-label"></div>
+                        <div><label>Montant (€)</label><input type="number" id="h-amount"></div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex gap-4">
+                    <button onclick="saveAccount()" class="flex-1 bg-green-600 text-white py-4 rounded font-bold uppercase shadow-lg hover:bg-green-700 transition">Enregistrer en Base</button>
+                    <button id="btn-del" onclick="deleteAccount()" class="hidden bg-red-600 text-white px-8 py-4 rounded font-bold uppercase shadow-lg">Supprimer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let currentHistory = [];
+        let isEditing = false;
+
+        window.onload = () => { loadClients(); };
+
+        async function loadClients() {
+            const container = document.getElementById('client-list');
+            container.innerHTML = '<p class="p-4 text-xs italic">Mise à jour...</p>';
+            try {
+                const snap = await db.collection("users").get();
+                container.innerHTML = "";
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    container.innerHTML += `
+                        <div onclick="editClient('${u.clientCode}')" class="p-4 border-b hover:bg-blue-50 cursor-pointer transition flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-blue-900 text-[12px] uppercase">${u.name || 'SANS NOM'}</div>
+                                <div class="text-[10px] text-gray-400">ID: ${u.clientCode} | PIN: ${u.pin}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-green-600 text-xs">${parseFloat(u.solde).toLocaleString('fr-FR')} €</div>
+                                <div class="text-[9px] uppercase px-1 rounded bg-gray-100">${u.status || 'Actif'}</div>
+                            </div>
+                        </div>`;
+                });
+            } catch (e) { container.innerHTML = "Erreur de chargement."; }
+        }
+
+        async function editClient(code) {
+            isEditing = true;
+            const doc = await db.collection("users").doc(code).get();
+            const u = doc.data();
+            
+            document.getElementById('c-code').value = u.clientCode;
+            document.getElementById('c-code').disabled = true;
+            document.getElementById('c-pin').value = u.pin || "";
+            document.getElementById('c-name').value = u.name || "";
+            document.getElementById('c-email').value = u.email || "";
+            document.getElementById('c-status').value = u.status || "Actif";
+            document.getElementById('c-solde').value = u.solde || 0;
+            document.getElementById('c-iban').value = u.iban || "";
+            document.getElementById('c-addr').value = u.address || "";
+            document.getElementById('c-cardname').value = u.cardName || "";
+            document.getElementById('c-16').value = u.cardNumber || "";
+            document.getElementById('c-exp').value = u.cardExp || "";
+
+            currentHistory = u.history || [];
+            document.getElementById('h-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('op-section').classList.remove('hidden');
+            document.getElementById('btn-del').classList.remove('hidden');
+            document.getElementById('form-title').innerText = "Modification : " + (u.name || code);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            isEditing = false;
+            document.getElementById('c-code').disabled = false;
+            document.getElementById('c-code').value = "";
+            document.getElementById('c-pin').value = "";
+            document.getElementById('c-name').value = "";
+            document.getElementById('op-section').classList.add('hidden');
+            document.getElementById('btn-del').classList.add('hidden');
+            document.getElementById('form-title').innerText = "Créer un nouveau profil client";
+        }
+
+        async function saveAccount() {
+            const code = document.getElementById('c-code').value.trim();
+            const pin = document.getElementById('c-pin').value.trim();
+
+            // Validations de sécurité
+            if(code.length !== 8) return alert("Le code client doit comporter exactement 8 chiffres.");
+            if(pin.length !== 6) return alert("Le code PIN doit comporter exactement 6 chiffres.");
+
+            // Traitement de l'historique si une opération est saisie
+            const hLabel = document.getElementById('h-label').value;
+            const hAmount = parseFloat(document.getElementById('h-amount').value);
+            const hDate = document.getElementById('h-date').value;
+            const hType = document.getElementById('h-type').value;
+
+            if (hLabel && !isNaN(hAmount)) {
+                const isDebit = (hType !== 'VIREMENT RECU' && hType !== 'DEPOT');
+                const finalAmt = isDebit ? -Math.abs(hAmount) : Math.abs(hAmount);
+                const d = hDate.split('-');
+                const formattedDate = `${d[2]}/${d[1]}/${d[0]}`;
+
+                currentHistory.unshift({
+                    date: formattedDate,
+                    label: hLabel.toUpperCase(),
+                    amount: finalAmt,
+                    type: hType
+                });
+            }
+
+            const userData = {
+                clientCode: code,
+                pin: pin,
+                name: document.getElementById('c-name').value.toUpperCase(),
+                email: document.getElementById('c-email').value,
+                status: document.getElementById('c-status').value,
+                solde: parseFloat(document.getElementById('c-solde').value) || 0,
+                iban: document.getElementById('c-iban').value.toUpperCase(),
+                address: document.getElementById('c-addr').value,
+                cardName: document.getElementById('c-cardname').value.toUpperCase(),
+                cardNumber: document.getElementById('c-16').value,
+                cardExp: document.getElementById('c-exp').value,
+                conseiller: document.getElementById('c-cons').value,
+                history: currentHistory,
+                lastUpdate: new Date().getTime()
+            };
+
+            try {
+                await db.collection("users").doc(code).set(userData, { merge: true });
+                alert("Données mises à jour avec succès !");
+                loadClients();
+                if(!isEditing) resetForm();
+            } catch (e) { 
+                alert("Erreur Firestore : " + e.message); 
+            }
+        }
+
+        async function deleteAccount() {
+            const code = document.getElementById('c-code').value;
+            if(confirm("Supprimer définitivement le client " + code + " ?")) {
+                await db.collection("users").doc(code).delete();
+                resetForm();
+                loadClients();
+            }
+        }
+    </script>
+</body>
+</html>

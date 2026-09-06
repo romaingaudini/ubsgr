@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+      <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png
+
+" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Mon Espace - UBS</title>
+    <style>
+        :root {
+            --bourso-blue: #004482;
+            --bourso-cyan: #00AEEF;
+            --bourso-pink: #E3007E;
+            --bourso-dark-blue: #002D54;
+        }
+        body { font-family: 'Open Sans', sans-serif; background-color: #F2F7F9; }
+        .pink-border { border-bottom: 3px solid var(--bourso-pink); }
+        .shadow-custom { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+        /* Styles Spécifiques Chat */
+        #chat-window {
+            transition: all 0.3s ease-in-out;
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #chat-window.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .chat-scrollbar::-webkit-scrollbar { width: 4px; }
+        .chat-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        /* Styles Spécifiques Slide Menu */
+        #side-menu {
+            transition: transform 0.3s ease-in-out;
+        }
+        #menu-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-700 pb-20 lg:pb-0">
+
+    <nav class="hidden lg:flex bg-white shadow-sm px-6 py-2 justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-6">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-8 cursor-pointer" onclick="window.location.reload()">
+            <div class="flex gap-6 text-sm font-medium">
+                <a href="dashboard.html" class="text-blue-500 pink-border pb-1">Mes comptes</a>
+                <a href="#" class="hover:text-pink-600 transition">Mes services</a>
+                <a href="#">Produits</a>
+                <a href="#">Parrainage</a>
+                <a href="#">Bourse & Actus</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-gray-500">
+            <i class="fa-solid fa-magnifying-glass bg-gray-100 p-2 rounded-full cursor-pointer"></i>
+            <span class="text-xs"><i class="fa-regular fa-comment-dots"></i> Aide & Contact</span>
+            <i class="fa-regular fa-bell cursor-pointer"></i> Deconnexion >>>
+            <div onclick="logout()" id="user-initials-desktop" class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-xs cursor-pointer">--</div>
+        </div>
+    </nav>
+
+    <div class="lg:hidden bg-[#002D54] text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSideMenu()" class="text-xl focus:outline-none p-1 hover:bg-white/10 rounded-lg transition mr-1">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div onclick="logout()" id="user-initials" class="w-9 h-9 bg-white/10 text-white rounded-full flex items-center justify-center font-bold text-sm border border-white/20">--</div>
+            <div>
+                <p class="text-[10px] opacity-60">Bonjour,</p>
+                <p id="user-firstname-mobile" class="text-xs font-bold -mt-1">Client</p>
+            </div>
+        </div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-5 brightness-0 invert">
+        <div class="flex items-center gap-4 text-lg">
+            <i class="fa-regular fa-bell cursor-pointer"></i>
+            <i class="fa-solid fa-power-off text-red-400 cursor-pointer" onclick="logout()"></i>
+        </div>
+    </div>
+
+    <div id="menu-overlay" onclick="toggleSideMenu()" class="hidden fixed inset-0 bg-black/50 z-50 opacity-0 transition-opacity duration-300 lg:hidden"></div>
+    
+    <div id="side-menu" class="fixed inset-y-0 left-0 w-72 bg-[#002D54] text-white z-50 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-2xl lg:hidden">
+        <div class="p-5 border-b border-white/10 flex justify-between items-center bg-[#002240]">
+            <div class="flex items-center gap-3">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png" class="h-5 brightness-0 invert">
+            </div>
+            <button onclick="toggleSideMenu()" class="text-xl text-white/70 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <p class="px-3 text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-2">Navigation</p>
+            <a href="dashboard.html" class="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/10 text-white text-xs font-bold transition">
+                <i class="fa-solid fa-wallet text-sm w-5 text-center text-cyan-400"></i> Mes comptes
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-white/90 text-xs font-medium transition">
+                <i class="fa-solid fa-cubes text-sm w-5 text-center text-gray-400"></i> Mes services
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-white/90 text-xs font-medium transition">
+                <i class="fa-solid fa-piggy-bank text-sm w-5 text-center text-gray-400"></i> Produits
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-white/90 text-xs font-medium transition">
+                <i class="fa-solid fa-gift text-sm w-5 text-center text-gray-400"></i> Parrainage
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-white/90 text-xs font-medium transition">
+                <i class="fa-solid fa-chart-line text-sm w-5 text-center text-gray-400"></i> Bourse & Actus
+            </a>
+
+            <div class="pt-4 mt-4 border-t border-white/10"></div>
+            <p class="px-3 text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-2">Raccourcis Actions</p>
+            
+            <a href="virement.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-white/80 text-xs transition">
+                <i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i> Faire un virement
+            </a>
+            <a href="carte.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-white/80 text-xs transition">
+                <i class="fa-solid fa-credit-card w-5 text-center"></i> Gérer ma carte
+            </a>
+            <a href="rib.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-white/80 text-xs transition">
+                <i class="fa-solid fa-file-invoice w-5 text-center"></i> Télécharger mon RIB
+            </a>
+        </div>
+
+        <div class="p-4 border-t border-white/10 bg-[#002240] text-center">
+            <button onclick="logout()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-power-off"></i> Déconnexion
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-4 lg:p-6">
+        
+        <div class="col-span-1 lg:col-span-7 order-1 space-y-4">
+            <div class="text-xs font-bold uppercase tracking-wider text-gray-500 lg:text-gray-700">UBS SUISSE <span id="user-rib-short">CH001 ●●●●</span></div>
+            
+            <div class="bg-gradient-to-br from-[#002D54] to-[#004482] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white/5 rounded-full pointer-events-none"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[11px] uppercase tracking-widest opacity-60"><span id="date-du-jour"></span></p>
+                        <p class="text-3xl lg:text-4xl font-bold text-green-400 mt-1 flex items-center gap-2">
+                            <span id="main-solde">0,00 EUR</span>
+                            <i class="fa-regular fa-eye text-sm text-white opacity-60 cursor-pointer"></i>
+                        </p>
+                    </div>
+                    <span class="bg-white/10 px-3 py-1 rounded-full text-[10px] border border-white/10 font-medium">Compte Courant</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/10 text-center">
+                    <div class="border-r border-white/10">
+                        <p class="text-[10px] opacity-60">Découvert Autorisé</p>
+                        <p class="text-sm font-bold mt-0.5">1 000,00 EUR</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] opacity-60">Avoirs Totaux</p>
+                        <p id="total-avoirs" class="text-sm font-bold text-green-400 mt-0.5">0,00 EUR</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-custom border border-gray-100 overflow-hidden divide-y text-xs font-medium">
+                <div class="p-3.5 flex justify-between items-center text-blue-900">
+                    <span class="flex items-center gap-2 text-gray-500"><i class="fa-regular fa-clock text-sm"></i> Opérations à venir</span>
+                    <span class="font-bold">0,00 EUR</span>
+                </div>
+                <div class="p-3.5 flex justify-between items-center bg-gray-50/50 text-blue-950 font-bold">
+                    <span>Solde disponible estimé</span>
+                    <span class="dynamic-solde text-blue-600">0,00 EUR</span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-xl flex gap-3 relative shadow-sm">
+                <i class="fa-solid fa-circle-info text-blue-500 text-base mt-0.5"></i>
+                <div class="text-xs md:text-sm">
+                    <p class="text-blue-900 font-bold">Votre carte VISA ULTIM est en cours de fabrication.</p>
+                    <a href="#" class="text-blue-600 font-bold underline mt-1 block">Suivre l'envoi</a>
+                </div>
+            </div>
+
+            <div class="flex gap-6 border-b text-xs font-bold text-gray-400 pt-2 px-1">
+                <div class="border-b-4 border-pink-600 pb-2 text-pink-600">Dernières opérations</div>
+                <div class="hover:text-gray-600 pb-2 cursor-pointer transition">Relevés PDF</div>
+            </div>
+
+            <div id="transactions-list" class="bg-white rounded-2xl shadow-custom border border-gray-100 divide-y overflow-hidden"></div>
+        </div>
+
+        <div class="col-span-1 lg:col-span-2 order-3 lg:order-2 space-y-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-500 hidden lg:block">Actions</p>
+            <div class="grid grid-cols-4 lg:flex lg:flex-col gap-3 bg-white lg:bg-transparent p-4 lg:p-0 rounded-2xl shadow-custom lg:shadow-none border lg:border-0">
+                <a href="virement.html" class="flex flex-col items-center lg:items-start lg:flex-row lg:gap-3 p-2 lg:p-3 lg:bg-white lg:rounded-xl lg:shadow-custom lg:border border-gray-50 hover:bg-gray-50 transition group">
+                    <div class="w-10 h-10 bg-cyan-500/10 text-cyan-600 rounded-full flex items-center justify-center text-base group-hover:bg-cyan-50 group-hover:text-white transition shrink-0">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    </div>
+                    <span class="text-[10px] lg:text-xs font-bold text-blue-900 mt-1.5 lg:mt-2 block">Virement</span>
+                </a>
+                <a href="carte.html" class="flex flex-col items-center lg:items-start lg:flex-row lg:gap-3 p-2 lg:p-3 lg:bg-white lg:rounded-xl lg:shadow-custom lg:border border-gray-50 hover:bg-gray-50 transition group">
+                    <div class="w-10 h-10 bg-cyan-500/10 text-cyan-600 rounded-full flex items-center justify-center text-base group-hover:bg-cyan-50 group-hover:text-white transition shrink-0">
+                        <i class="fa-solid fa-credit-card"></i>
+                    </div>
+                    <span class="text-[10px] lg:text-xs font-bold text-blue-900 mt-1.5 lg:mt-2 block">Ma Carte</span>
+                </a>
+                <a href="rib.html" class="flex flex-col items-center lg:items-start lg:flex-row lg:gap-3 p-2 lg:p-3 lg:bg-white lg:rounded-xl lg:shadow-custom lg:border border-gray-50 hover:bg-gray-50 transition group">
+                    <div class="w-10 h-10 bg-cyan-500/10 text-cyan-600 rounded-full flex items-center justify-center text-base group-hover:bg-cyan-50 group-hover:text-white transition shrink-0">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                    <span class="text-[10px] lg:text-xs font-bold text-blue-900 mt-1.5 lg:mt-2 block">Mon RIB</span>
+                </a>
+                <a href="ajouter-beneficiaire.html" class="flex flex-col items-center lg:items-start lg:flex-row lg:gap-3 p-2 lg:p-3 lg:bg-white lg:rounded-xl lg:shadow-custom lg:border border-gray-50 hover:bg-gray-50 transition group">
+                    <div class="w-10 h-10 bg-cyan-500/10 text-cyan-600 rounded-full flex items-center justify-center text-base group-hover:bg-cyan-50 group-hover:text-white transition shrink-0">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <span class="text-[10px] lg:text-xs font-bold text-blue-900 mt-1.5 lg:mt-2 block">Bénéficiaire</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-span-1 lg:col-span-3 order-2 lg:order-3 space-y-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Synthèse des comptes</p>
+            
+            <div class="bg-white rounded-2xl shadow-custom border border-gray-100 overflow-hidden">
+                <div class="bg-gray-50 p-3.5 text-xs font-bold text-gray-600 uppercase tracking-wider border-b">Mes comptes UBS</div>
+                <div class="p-4 space-y-3">
+                    <div class="flex justify-between text-xs font-bold text-cyan-600">
+                        <span>Banque au quotidien</span>
+                        <span class="dynamic-solde">0,00 EUR</span>
+                    </div>
+                    <div class="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
+                        <div class="flex justify-between text-[11px] font-bold text-blue-950">
+                            <span>COMPTE COURANT INDIVIDUEL</span>
+                            <span class="text-green-600 dynamic-solde">0,00 EUR</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[11px] text-pink-600 mt-1 font-bold">
+                            <span>Compte Bloqué</span>
+                            <img src="https://www.usinenouvelle.com/expo/img/panneau-d-obligation-de-fermer-le-cadenas-008568485-product_zoom.jpg" class="h-3.5 w-auto">
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase font-medium"><i class="fa-solid fa-user text-[9px]"></i> <span id="user-full-name">Chargement...</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-custom border border-gray-100 overflow-hidden">
+                <div class="bg-pink-600/10 text-pink-700 p-3 flex justify-between items-center text-xs font-bold uppercase tracking-wider">
+                    Suivi des dossiers <span class="bg-pink-600 text-white text-[9px] px-2 py-0.5 rounded-full">1</span>
+                </div>
+                <div class="p-4 text-blue-950 text-xs font-bold">
+                    📁 Virement recu ETS BOULANGER (Banque Laurentienne) - 1 200 000$CAD
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-16 grid grid-cols-4 items-center justify-center z-50 shadow-lg">
+        <a href="#" class="flex flex-col items-center justify-center text-blue-600">
+            <i class="fa-solid fa-wallet text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Comptes</span>
+        </a>
+        <a href="virement.html" class="flex flex-col items-center justify-center text-gray-400 hover:text-blue-600">
+            <i class="fa-solid fa-paper-plane text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Virements</span>
+        </a>
+        <a href="carte.html" class="flex flex-col items-center justify-center text-gray-400 hover:text-blue-600">
+            <i class="fa-solid fa-credit-card text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Cartes</span>
+        </a>
+        <div onclick="toggleChat()" class="flex flex-col items-center justify-center text-gray-400 hover:text-blue-600 cursor-pointer">
+            <i class="fa-solid fa-comment-dots text-lg"></i>
+            <span class="text-[9px] font-medium mt-0.5">Assistant</span>
+        </div>
+    </div>
+
+    <div class="hidden lg:flex fixed bottom-10 right-10 flex flex-col items-end z-[100]">
+        <div id="chat-window" class="bg-white w-72 rounded-xl shadow-2xl border border-gray-100 mb-4 flex flex-col overflow-hidden">
+            <div class="bg-cyan-500 p-3 text-white flex justify-between items-center shadow-md">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-robot"></i>
+                    <span class="text-xs font-bold uppercase tracking-wider">Assistant Virtuel</span>
+                </div>
+                <button onclick="toggleChat()" class="hover:rotate-90 transition-all"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="chat-messages" class="h-64 overflow-y-auto p-4 space-y-3 chat-scrollbar bg-gray-50/50">
+                <div class="bg-white border p-2.5 rounded-lg rounded-tl-none shadow-sm text-[11px] text-gray-600">
+                    Bonjour ! 👋 Je suis votre assistant personnel. Comment puis-je vous éclairer ?
+                </div>
+            </div>
+            <div id="chat-options" class="p-3 border-t bg-white space-y-2">
+                <button onclick="sendResponse('bloque')" class="w-full text-left text-[10px] font-bold text-cyan-600 p-2 bg-cyan-50 rounded hover:bg-cyan-100 transition border border-cyan-100">
+                    ❓ Que faire quand mon compte est bloqué ?
+                </button>
+            </div>
+        </div>
+
+        <div onclick="toggleChat()" class="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-xl border cursor-pointer hover:scale-105 transition group">
+            <span class="text-blue-500 text-xs font-bold italic group-hover:text-pink-600 transition">Une question ?</span>
+            <div class="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xl shadow-lg">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-window-mobile" class="lg:hidden fixed inset-x-0 bottom-16 bg-white border-t rounded-t-2xl shadow-2xl z-40 h-[70vh] transition-all duration-300 transform translate-y-full hidden flex flex-col">
+        <div class="bg-cyan-500 p-4 text-white flex justify-between items-center rounded-t-2xl">
+            <span class="text-xs font-bold uppercase"><i class="fa-solid fa-robot mr-2"></i>Assistant Mobile</span>
+            <button onclick="toggleChat()"><i class="fa-solid fa-chevron-down"></i></button>
+        </div>
+        <div id="chat-messages-mobile" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+            <div class="bg-white border p-3 rounded-xl rounded-tl-none text-xs text-gray-600 shadow-sm">
+                Bonjour ! 👋 Comment puis-je vous aider depuis votre mobile ?
+            </div>
+        </div>
+        <div class="p-4 border-t bg-white">
+            <button onclick="sendResponse('bloque')" class="w-full text-left text-xs font-bold text-cyan-600 p-3 bg-cyan-50 rounded-xl border border-cyan-100">
+                ❓ Que faire quand mon compte est bloqué ?
+            </button>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        // LOGIQUE AFFICHAGE DATE
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('date-du-jour').textContent = new Date().toLocaleDateString('fr-FR', options);
+
+        // LOGIQUE SLIDE MENU LATÉRAL
+        function toggleSideMenu() {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('menu-overlay');
+            
+            if (menu.classList.contains('-translate-x-full')) {
+                // Ouvrir le menu
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    menu.classList.remove('-translate-x-full');
+                    overlay.classList.remove('opacity-0');
+                }, 10);
+            } else {
+                // Fermer le menu
+                menu.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // LOGIQUE CHAT DOUBLE STRUCTURE (MOBILE + PC)
+        function toggleChat() {
+            if (window.innerWidth < 1024) {
+                const win = document.getElementById('chat-window-mobile');
+                if(win.classList.contains('hidden')) {
+                    win.classList.remove('hidden');
+                    setTimeout(() => win.classList.remove('translate-y-full'), 10);
+                } else {
+                    win.classList.add('translate-y-full');
+                    setTimeout(() => win.classList.add('hidden'), 300);
+                }
+            } else {
+                document.getElementById('chat-window').classList.toggle('active');
+            }
+        }
+
+        function sendResponse(type) {
+            const isMobile = window.innerWidth < 1024;
+            const chatBox = document.getElementById(isMobile ? 'chat-messages-mobile' : 'chat-messages');
+            
+            if(type === 'bloque') {
+                chatBox.innerHTML += `
+                    <div class="flex justify-end">
+                        <div class="bg-cyan-500 text-white p-2.5 rounded-lg rounded-tr-none shadow-sm text-[11px] max-w-[80%]">
+                            Que faire quand mon compte a un statut bloqué ?
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => {
+                    chatBox.innerHTML += `
+                        <div class="bg-white border p-2.5 rounded-lg rounded-tl-none shadow-sm text-[11px] text-gray-600">
+                            <strong>Réponse :</strong> Contactez votre gestionnaire ! 📞
+                        </div>
+                    `;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 800);
+            }
+        }
+
+        // INTEGRATION DES DONNEES FIRESTORE
+        window.onload = async () => {
+            const user = await checkAuth();
+            if(!user) return;
+
+            try {
+                document.getElementById('user-initials').innerText = getInitials(user.name);
+                document.getElementById('user-initials-desktop').innerText = getInitials(user.name);
+                document.getElementById('user-full-name').innerText = user.name;
+                
+                if(user.name) {
+                    const firstName = user.name.split(' ')[0];
+                    document.getElementById('user-firstname-mobile').innerText = firstName;
+                }
+
+                if(user.rib) {
+                    const parts = user.rib.split(' ');
+                    document.getElementById('user-rib-short').innerText = parts[0] + " ●●●●";
+                }
+
+                const soldeFormate = formatCurrency(user.solde);
+                document.getElementById('total-avoirs').innerText = soldeFormate;
+                document.getElementById('main-solde').innerText = soldeFormate;
+                
+                document.querySelectorAll('.dynamic-solde').forEach(el => {
+                    el.innerText = soldeFormate;
+                });
+
+                const list = document.getElementById('transactions-list');
+                if(user.history && user.history.length > 0) {
+                    list.innerHTML = user.history.map(op => `
+                        <div class="p-4 flex justify-between items-center hover:bg-gray-50/80 transition text-xs">
+                            <div>
+                                <p class="font-bold text-blue-950 uppercase tracking-wide">${op.label}</p>
+                                <p class="text-[10px] text-gray-400 mt-0.5">${op.date}</p>
+                            </div>
+                            <span class="font-bold text-sm ${op.amount < 0 ? 'text-gray-800' : 'text-green-600'}">
+                                ${formatCurrency(op.amount)}
+                            </span>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<p class="p-10 text-center text-gray-400 text-xs italic">Aucune opération récente.</p>';
+                }
+            } catch (error) {
+                console.error("Erreur de liaison:", error);
+            }
+        };
+    </script>
+</body>
+</html>

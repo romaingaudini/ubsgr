@@ -1,0 +1,21 @@
+:root {
+    --bourso-blue: #004482;
+    --bourso-cyan: #00AEEF;
+    --bourso-pink: #E3007E;
+    --bourso-bg: #F2F7F9;
+}
+
+body { font-family: 'Open Sans', sans-serif; background-color: var(--bourso-bg); }
+
+.bourso-card {
+    @apply bg-white border border-gray-200 rounded-sm shadow-sm;
+}
+
+.btn-bourso-primary {
+    @apply bg-[#002D54] text-white font-bold py-2 px-6 rounded-full hover:bg-blue-900 transition;
+}
+
+.nav-active {
+    border-bottom: 4px solid var(--bourso-pink);
+    color: var(--bourso-cyan);
+}
