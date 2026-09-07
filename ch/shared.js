@@ -51,7 +51,7 @@ autoInitDatabase();
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('fr-FR', { 
         style: 'currency', 
-        currency: 'EUR' 
+        currency: 'CHF' 
     }).format(amount);
 };
 
